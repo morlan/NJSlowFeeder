@@ -24,7 +24,7 @@ int setMotorVoltage(int, float, float);
 //Loop/Sleep Variables
 u_long PrevUpdateTime = 0;
 u_long SleepTimeoutTracker = 0;
-int SleepTimeoutTime = 60000; //milliseconds
+int SleepTimeoutTime = 30000; //milliseconds
 u_long MotorRunTime = 0;
 int MotorRunTimeout = 500; //milliseconds to run motor without beans
 u_long LastButtonPress = 0;
@@ -156,7 +156,7 @@ void loop() {
   buttonUP.process();
   buttonDOWN.process();
   if(buttonUP.buttonstatus != 0 || buttonDOWN.buttonstatus != 0){ LastButtonPress = millis();} //track last button press
-  if(buttonUP.buttonstatus != 0 || buttonDOWN.buttonstatus != 0 || scale_reading > 1.0){ SleepTimeoutTracker = millis();} //delay sleep
+  if(buttonUP.buttonstatus != 0 || buttonDOWN.buttonstatus != 0 || (scale_reading > 2.0 && scale_reading < 30.0)){ SleepTimeoutTracker = millis();} //delay sleep
   if(buttonUP.buttonstatus == 1){
     //do hold things
     Serial.println("holdUP");
