@@ -1,0 +1,1 @@
+There are a lot of variants of the DF54, 64, and 83 based on grinder, popcorn lid, and bellows. Please measure your setup to ensure either of these rings fits.
