@@ -16,11 +16,13 @@ const int HX_CLK = 11; //hx711
 #define HX711CLK GPIO_NUM_11 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
 
 //motor variables
+
 float MotorVoltage = 0;  //Current value of Motor Drive Voltage
   //user config
-float MotorStartVoltage = 1.5; //voltage the system will default to when clicking or holding up.
+int MotorPWMFrequency = 20000; //motor PWM frequency, 20000 you can't hear, 1000 has more granular range.
+float MotorStartVoltage = 2.6; //voltage the system will default to when clicking or holding up. Use 1.5V for 1000Hz analog freq, 2.7 for 20000Hz.
 float BusVoltage = 3.3; //PWM Logic Level
-float MotorVoltageStep = 0.1; //voltage the motor will step up per MotorUpdateTime interval when a button is held 
+float MotorVoltageStep = 0.1; //voltage the motor will step up per MotorUpdateTime interval when a button is held  Use 0.2 for 1000Hz, 0.1 for 20000Hz
 int MotorUpdateTime = 500; //milliseconds, controls how frequently the motor voltage gets updated
 
 int setMotorVoltage(int, float, float);
@@ -117,7 +119,7 @@ void print_wakeup_reason() {
 void setup() {
   //motor configs
   pinMode(13, OUTPUT);
-  analogWriteFrequency(1000); //20000 is out of hearing range, 1000 seems to be fine with the motor controller in the housing.
+  analogWriteFrequency(MotorPWMFrequency); //20000 is out of hearing range, 1000 seems to be fine with the motor controller in the housing.
   
   //start serial for ButtonDebug
   Serial.begin(115200);
@@ -155,7 +157,12 @@ void setup() {
   delay(2000);
   Serial.println("End Delay Startup");
   scale.tare();
-
+  //spin motor to indicate completion of startup
+  analogWriteFrequency(1000);
+  setMotorVoltage(MotorPin, BusVoltage, 0.5);
+  delay(500);
+  setMotorVoltage(MotorPin, BusVoltage, 0);
+  analogWriteFrequency(MotorPWMFrequency);
   //reset status, button lib has startup bugs - will always trigger a release and click mode per button when process is called the first time. Also cover button pressed reset from scale method
   buttonUP.process();
   buttonDOWN.process();
