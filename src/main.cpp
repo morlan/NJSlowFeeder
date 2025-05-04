@@ -3,30 +3,43 @@
 #include "driver/rtc_io.h" //deepsleep
 #include "hx711.h" //loadcell
 
-//GPIOs
-const int MotorPin = 13;
-const int buttonUPpin = 5;
-const int buttonDOWNpin = 4; 
-const int HX_DOUT = 10; //green wire, hx711
-const int HX_CLK = 11; //yellow wire, hx711
-#define HX711CLK GPIO_NUM_11 //define CLK this way for deepsleep pullup (hx711 in sleep)
-
 //deepsleep/wake defines, using EXT0 cause internal pullup power domain is needed.
 #define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)  // 2 ^ GPIO_NUMBER in hex
 #define WAKEUP_GPIO              GPIO_NUM_5     // Only RTC IO are allowed
 
+//GPIOs
+const int MotorPin = 13;
+const int buttonUPpin = 5;
+const int buttonDOWNpin = 4; 
+const int HX_DOUT = 10; //hx711
+const int HX_CLK = 11; //hx711
+#define HX711CLK GPIO_NUM_11 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
+
 //motor variables
-float MotorVoltage = 1.5;
-float BusVoltage = 3.3;
-int MotorUpdateTime = 500; //millisecond
+float MotorVoltage = 0;  //Current value of Motor Drive Voltage
+  //user config
+float MotorStartVoltage = 1.5; //voltage the system will default to when clicking or holding up.
+float BusVoltage = 3.3; //PWM Logic Level
+float MotorVoltageStep = 0.1; //voltage the motor will step up per MotorUpdateTime interval when a button is held 
+int MotorUpdateTime = 500; //milliseconds, controls how frequently the motor voltage gets updated
+
 int setMotorVoltage(int, float, float);
 
 //Loop/Sleep Variables
-u_long PrevUpdateTime = 0;
+u_long PrevUpdateTime = 0; 
 u_long SleepTimeoutTracker = 0;
-int SleepTimeoutTime = 30000; //milliseconds
+  //user config
+int SleepTimeoutTime = 60000; //milliseconds, controls how long before device deep sleep when there's no weight, button presses, etc.
+int SleepErrorTimeoutTime = 300000;  //sleep regardless of weight after 5 minutes of no button pushes. Used to cover for any weird scale behavior.
+float WeightTimeoutMinimumBound = 2.0; //minimum weight to stay awake
+float WeightTimeoutMaxiumumBound = 30.0; //maximum bean weight expected in slowfeeder, keeps awake.
+
+//MotorAutoOff
 u_long MotorRunTime = 0;
-int MotorRunTimeout = 500; //milliseconds to run motor without beans
+int MotorRunTimeout = 1000; //milliseconds to run motor without beans
+float MotorTimeoutWeightMinimum = 1.0; //minimum weight before motor auto-off routine begins evaluating
+
+//LastButtonPress
 u_long LastButtonPress = 0;
 int ButtonRunTimeout = 5000; //milliseconds to ignore motor shutoff conditions due to button press
 
@@ -98,10 +111,13 @@ void print_wakeup_reason() {
   }
 }
 
+
+
+
 void setup() {
   //motor configs
   pinMode(13, OUTPUT);
-  analogWriteFrequency(20000);
+  analogWriteFrequency(1000); //20000 is out of hearing range, 1000 seems to be fine with the motor controller in the housing.
   
   //start serial for ButtonDebug
   Serial.begin(115200);
@@ -125,18 +141,38 @@ void setup() {
   //buttonDOWN.clickHandler(onClick);
   buttonDOWN.releaseHandler(onRelease);
   buttonDOWN.holdHandler(onHold, 1000); // must be held for at least 1000 ms to trigger
+  
+  
+  //Methods to prevent scale taring before button release. Might be worth pairing with zero factor to create robust detection of unit resting on a counter.
+  Serial.println(digitalRead(buttonUPpin));
+  Serial.println(digitalRead(buttonDOWNpin));
+  while(digitalRead(buttonUPpin) != LOW || digitalRead(buttonDOWNpin) != LOW){ 
+    delay(500);
+    Serial.println("Button pressed, delay startup tare");
+  } 
+  //delay for 2 second to allow for time to set the slowfeeder on the counter.
+  Serial.println("Start Delay startup");
+  delay(2000);
+  Serial.println("End Delay Startup");
+  scale.tare();
 
+  //reset status, button lib has startup bugs - will always trigger a release and click mode per button when process is called the first time. Also cover button pressed reset from scale method
+  buttonUP.process();
+  buttonDOWN.process();
+  buttonUP.buttonstatus = 0;
+  buttonDOWN.buttonstatus = 0;
+  Serial.println(buttonUP.buttonstatus);
+  Serial.println(buttonDOWN.buttonstatus);
+
+  //set time trackers to current time
   PrevUpdateTime = millis();
   SleepTimeoutTracker = PrevUpdateTime;
-  
-  //quick n dirty way to avoid button press on boot screwing up calibration, should use button states to do this smartly or investigate zero factor use/stability.
-  delay(2000);
-  scale.tare();
 }
+
 
 void loop() {
   int updatetimebool = ((millis() - PrevUpdateTime) > MotorUpdateTime);
-  if((millis() - SleepTimeoutTracker) > SleepTimeoutTime){
+  if(((millis() - SleepTimeoutTracker) > SleepTimeoutTime) || ((millis() - LastButtonPress) > SleepErrorTimeoutTime)){
       //put HX711 to sleep
       rtc_gpio_pulldown_dis(HX711CLK);
       rtc_gpio_pullup_en(HX711CLK);
@@ -150,53 +186,64 @@ void loop() {
       Serial.println("If you see this, no you didn't");
   }
   if(updatetimebool){
+    //read scale every motor update interval
     scale_reading = scale.get_units();
     Serial.println(scale_reading, 1);
   }
+  //check button states
   buttonUP.process();
   buttonDOWN.process();
-  if(buttonUP.buttonstatus != 0 || buttonDOWN.buttonstatus != 0){ LastButtonPress = millis();} //track last button press
-  if(buttonUP.buttonstatus != 0 || buttonDOWN.buttonstatus != 0 || (scale_reading > 2.0 && scale_reading < 30.0)){ SleepTimeoutTracker = millis();} //delay sleep
+  
+  //time state evaluations
+  if(buttonUP.buttonstatus != 0 || buttonDOWN.buttonstatus != 0){ LastButtonPress = millis();} //track last button active time
+  if(buttonUP.buttonstatus != 0 || buttonDOWN.buttonstatus != 0 || (scale_reading > WeightTimeoutMinimumBound && scale_reading < WeightTimeoutMaxiumumBound)){ SleepTimeoutTracker = millis();} //delay sleep
+  
+  //button status evaluations
   if(buttonUP.buttonstatus == 1){
     //do hold things
-    Serial.println("holdUP");
+    //Serial.println("holdUP");
     if(updatetimebool){
-      MotorVoltage = constrain(MotorVoltage + 0.2, 0, BusVoltage);
-      Serial.println(MotorVoltage);
+      if(MotorVoltage == 0){MotorVoltage = MotorStartVoltage;}
+      MotorVoltage = constrain(MotorVoltage + MotorVoltageStep, 0, BusVoltage);
+      Serial.print("MotorVoltage: ");
+      Serial.println(MotorVoltage, 2);
       setMotorVoltage(MotorPin, BusVoltage, MotorVoltage);
     }
   }
   else if(buttonUP.buttonstatus == 2){
     //do click things
-    Serial.println("clickUP");
-    setMotorVoltage(MotorPin, BusVoltage, MotorVoltage=2.1);
+    //Serial.println("clickUP");
+    setMotorVoltage(MotorPin, BusVoltage, MotorVoltage = MotorStartVoltage);
     //reset buttonUP state
     buttonUP.buttonstatus = 0;
   }
 
   if(buttonDOWN.buttonstatus == 1){
     //do hold things
-    Serial.println("holdDOWN");
+    //Serial.println("holdDOWN");
     if(updatetimebool){
-      MotorVoltage = constrain(MotorVoltage - 0.2, 0, BusVoltage);
-      Serial.println(MotorVoltage);
+      MotorVoltage = constrain(MotorVoltage - MotorVoltageStep, 0, BusVoltage);
+      Serial.print("MotorVoltage: ");
+      Serial.println(MotorVoltage, 2);
       setMotorVoltage(MotorPin, BusVoltage, MotorVoltage);
     }
   }
   else if(buttonDOWN.buttonstatus == 2){
     //do click things
-    Serial.print("clickDOWN");
+    //Serial.print("clickDOWN");
     setMotorVoltage(MotorPin, BusVoltage, 0);
     //reset buttonUP state
     buttonDOWN.buttonstatus = 0;
   }
   
-  if(MotorVoltage > 0 && scale_reading < 1.0 && MotorRunTime == 0){
+  //Motor auto-off feature
+  if(MotorVoltage > 0 && scale_reading < MotorTimeoutWeightMinimum && MotorRunTime == 0){
     MotorRunTime = millis();
   }
   else if(MotorVoltage > 0 && scale_reading < 1.0 && MotorRunTime > 0){
     if((millis() - MotorRunTime > MotorRunTimeout) && (millis()-LastButtonPress > ButtonRunTimeout)){
-      setMotorVoltage(MotorPin, BusVoltage, 0);
+      setMotorVoltage(MotorPin, BusVoltage, MotorVoltage = 0);
+      Serial.println("No Load Motor Timeout");
     }
   }
   else{
