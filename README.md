@@ -24,6 +24,16 @@ BOM at [this link](https://docs.google.com/spreadsheets/d/11zUR7dkBkgdKcGbynbE2z
 - [ ] WebUI for parameter control
 - [ ] PoopCode :tm: - Precise single dosing of beans (for filling vials or grinding)
 
+### Getting Started with V1.2 Code
+1. Install VSCode
+2. Clone this repo
+3. Open the NJSlowfeeder.code-workspace file
+   - This should install all required dependencies
+4. Open folder in Platformio extension (if not already selected)
+5. Choose the MCU you have in the Platformio Project Tasks section, plug MCU into computer, click upload
+   - If this fails, try holding the boot button as you plug the MCU into the computer
+6. Done
+
 ## V1.1 
 V1.1 uses a fully analog approach to slowfeeding and does not include a microcontroller.\
 V1.1 is unlikely to receive further updates. An analog V1.2 can be made with some tweaks to the BOM.\
