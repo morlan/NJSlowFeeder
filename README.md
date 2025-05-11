@@ -12,7 +12,7 @@ Code is very much a proof of concept, and under development.
 
 ## Planned Functions:
 - [ ] WebUI for parameter control
-- [ ] PoopCode:tm: - Precise single dosing of beans (for filling vials or grinding)
+- [ ] PoopCode :tm: - Precise single dosing of beans (for filling vials or grinding)
 
 
 This readme will be updated with more information in the future.
