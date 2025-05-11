@@ -3,7 +3,8 @@
 This is a slowfeeder for feeding coffee beans into a grinder. It is designed to be 3D printed and assembled with basic mechanical and electrical tools (hex driver, soldering iron, wire strippers).
 
 ## Updates:
-V1.2 is out. See Issues for additional adaptors or to request additional functionality.
+V1.2 is out. See Issues for additional adaptors or to request additional functionality.\
+Development is actively occuring, the main discussion channel is on the Gaggiuino Discord. 
 
 ## V1.2
 V1.2 introduces a microcontroller (with BLE/Wifi), PWM motor controller, and load cell compatiblity while maintaining the great battery life of V1.1.\
