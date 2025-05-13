@@ -7,13 +7,22 @@
 #define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)  // 2 ^ GPIO_NUMBER in hex
 #define WAKEUP_GPIO              GPIO_NUM_5     // Only RTC IO are allowed
 
+// //GPIOs for R&D Supermini, don't use.
+// const int MotorPin = 13;
+// const int buttonUPpin = 5;
+// const int buttonDOWNpin = 4; 
+// const int HX_DOUT = 10; //hx711
+// const int HX_CLK = 11; //hx711
+// #define HX711CLK GPIO_NUM_11 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
+
+
 //GPIOs
-const int MotorPin = 13;
+const int MotorPin = 8; //change to 7 if motor runs in reverse
 const int buttonUPpin = 5;
 const int buttonDOWNpin = 4; 
 const int HX_DOUT = 10; //hx711
-const int HX_CLK = 11; //hx711
-#define HX711CLK GPIO_NUM_11 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
+const int HX_CLK = 9; //hx711
+#define HX711CLK GPIO_NUM_9 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
 
 //motor variables
 
