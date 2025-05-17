@@ -127,7 +127,7 @@ void print_wakeup_reason() {
 
 void setup() {
   //motor configs
-  pinMode(13, OUTPUT);
+  pinMode(MotorPin, OUTPUT);
   analogWriteFrequency(MotorPWMFrequency); //20000 is out of hearing range, 1000 seems to be fine with the motor controller in the housing.
   
   //start serial for ButtonDebug
@@ -247,7 +247,7 @@ void loop() {
   else if(buttonDOWN.buttonstatus == 2){
     //do click things
     //Serial.print("clickDOWN");
-    setMotorVoltage(MotorPin, BusVoltage, 0);
+    setMotorVoltage(MotorPin, BusVoltage, MotorVoltage = 0);
     //reset buttonUP state
     buttonDOWN.buttonstatus = 0;
   }
