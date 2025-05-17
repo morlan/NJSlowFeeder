@@ -35,8 +35,8 @@
 #include <Arduino.h>
 #include "HX711.h"
 
-const int DOUT = 10;
-const int CLK = 11;
+const int DOUT = 9; //hx711, labeled as D10 on the silkscreen for xiao
+const int CLK = 8; //hx711, labeled as D9 on the silkscreen for xiao
 
 HX711 scale;
 

@@ -16,12 +16,12 @@
 // #define HX711CLK GPIO_NUM_11 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
 
 
-//GPIOs
-const int MotorPin = 8; //change to 7 if motor runs in reverse
-const int buttonUPpin = 5;
-const int buttonDOWNpin = 4; 
-const int HX_DOUT = 10; //hx711
-const int HX_CLK = 9; //hx711
+//GPIOs (note these don't match up with the silkscreen digital callouts on the XIAO board, see schematic)
+const int MotorPin = 7; //change to 44 if motor runs in reverse
+const int buttonUPpin = 5; //labeled as D4 on the silkscreen for xiao
+const int buttonDOWNpin = 6; //labeled as D5 on the slikscreen for xiao
+const int HX_DOUT = 9; //hx711, labeled as D10 on the silkscreen for xiao
+const int HX_CLK = 8; //hx711, labeled as D9 on the silkscreen for xiao
 #define HX711CLK GPIO_NUM_9 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
 
 //motor variables
