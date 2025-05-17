@@ -22,7 +22,7 @@ const int buttonUPpin = 5; //labeled as D4 on the silkscreen for xiao
 const int buttonDOWNpin = 6; //labeled as D5 on the slikscreen for xiao
 const int HX_DOUT = 9; //hx711, labeled as D10 on the silkscreen for xiao
 const int HX_CLK = 8; //hx711, labeled as D9 on the silkscreen for xiao
-#define HX711CLK GPIO_NUM_9 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
+#define HX711CLK GPIO_NUM_8 //define HX_CLK this way as well for deepsleep pullup (hx711 in sleep)
 
 //motor variables
 
