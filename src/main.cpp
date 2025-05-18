@@ -259,7 +259,7 @@ void loop() {
       delay(2000);
       scale.tare();
     } else {
-      setMotorVoltage(MotorPin, BusVoltage, 0);
+      setMotorVoltage(IN1MotorPin, BusVoltage, 0);
     }
     //reset buttonDOWN state
     buttonDOWN.buttonstatus = 0;
