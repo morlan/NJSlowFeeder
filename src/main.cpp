@@ -127,7 +127,7 @@ void print_wakeup_reason() {
 
 void setup() {
   //motor configs
-  pinMode(13, OUTPUT);
+  pinMode(MotorPin, OUTPUT);
   analogWriteFrequency(MotorPWMFrequency); //20000 is out of hearing range, 1000 seems to be fine with the motor controller in the housing.
   
   //start serial for ButtonDebug
@@ -168,7 +168,7 @@ void setup() {
   scale.tare();
   //spin motor to indicate completion of startup
   analogWriteFrequency(1000);
-  setMotorVoltage(MotorPin, BusVoltage, 0.5);
+  setMotorVoltage(MotorPin, BusVoltage, 0.5); 
   delay(500);
   setMotorVoltage(MotorPin, BusVoltage, 0);
   analogWriteFrequency(MotorPWMFrequency);
@@ -229,7 +229,11 @@ void loop() {
   else if(buttonUP.buttonstatus == 2){
     //do click things
     //Serial.println("clickUP");
-    setMotorVoltage(MotorPin, BusVoltage, MotorVoltage = MotorStartVoltage);
+    if(MotorVoltage == 0){ //sets motor voltage to start voltage
+      setMotorVoltage(MotorPin, BusVoltage, MotorVoltage = MotorStartVoltage);
+    } else { //sets motor voltage to current user set voltage
+      setMotorVoltage(MotorPin, BusVoltage, MotorVoltage);
+    }
     //reset buttonUP state
     buttonUP.buttonstatus = 0;
   }
@@ -247,8 +251,13 @@ void loop() {
   else if(buttonDOWN.buttonstatus == 2){
     //do click things
     //Serial.print("clickDOWN");
-    setMotorVoltage(MotorPin, BusVoltage, 0);
-    //reset buttonUP state
+    if(MotorVoltage == 0){ //manually tare scale 
+      delay(2000);
+      scale.tare();
+    } else {
+      setMotorVoltage(MotorPin, BusVoltage, 0);
+    }
+    //reset buttonDOWN state
     buttonDOWN.buttonstatus = 0;
   }
   
