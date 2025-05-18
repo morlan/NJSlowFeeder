@@ -172,7 +172,7 @@ void setup() {
   scale.tare();
   //spin motor to indicate completion of startup
   analogWriteFrequency(1000);
-  setMotorVoltage(IN1MotorPin, BusVoltage, 0.5);
+  setMotorVoltage(IN1MotorPin, BusVoltage, 0.5); 
   delay(500);
   setMotorVoltage(IN1MotorPin, BusVoltage, 0);
   analogWriteFrequency(MotorPWMFrequency);
@@ -233,7 +233,11 @@ void loop() {
   else if(buttonUP.buttonstatus == 2){
     //do click things
     //Serial.println("clickUP");
-    setMotorVoltage(IN1MotorPin, BusVoltage, MotorVoltage = MotorStartVoltage);
+    if(MotorVoltage == 0){ //sets motor voltage to start voltage
+      setMotorVoltage(IN1MotorPin, BusVoltage, MotorVoltage = MotorStartVoltage);
+    } else { //sets motor voltage to current user set voltage
+      setMotorVoltage(IN1MotorPin, BusVoltage, MotorVoltage);
+    }
     //reset buttonUP state
     buttonUP.buttonstatus = 0;
   }
@@ -251,8 +255,13 @@ void loop() {
   else if(buttonDOWN.buttonstatus == 2){
     //do click things
     //Serial.print("clickDOWN");
-    setMotorVoltage(IN1MotorPin, BusVoltage, MotorVoltage = 0);
-    //reset buttonUP state
+    if(MotorVoltage == 0){ //manually tare scale 
+      delay(2000);
+      scale.tare();
+    } else {
+      setMotorVoltage(MotorPin, BusVoltage, 0);
+    }
+    //reset buttonDOWN state
     buttonDOWN.buttonstatus = 0;
   }
   
