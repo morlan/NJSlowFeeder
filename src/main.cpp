@@ -18,8 +18,8 @@
 
 
 //GPIOs (note these don't match up with the silkscreen digital callouts on the XIAO board, see schematic)
-const int IN1MotorPin = 7; //change to 44 if motor runs in reverse
-const int IN2MotorPin = 44; //change to 7 if motor runs in reverse
+const int IN1MotorPin = 44; //change to 44 if motor runs in reverse
+const int IN2MotorPin = 7; //change to 7 if motor runs in reverse
 const int buttonUPpin = 5; //labeled as D4 on the silkscreen for xiao
 const int buttonDOWNpin = 6; //labeled as D5 on the slikscreen for xiao
 const int HX_DOUT = 9; //hx711, labeled as D10 on the silkscreen for xiao
@@ -31,7 +31,7 @@ const int HX_CLK = 8; //hx711, labeled as D9 on the silkscreen for xiao
 float MotorVoltage = 0;  //Current value of Motor Drive Voltage
   //user config
 int MotorPWMFrequency = 20000; //motor PWM frequency, 20000 you can't hear, 1000 has more granular range.
-float MotorStartVoltage = 2.6; //voltage the system will default to when clicking or holding up. Use 1.5V for 1000Hz analog freq, 2.7 for 20000Hz.
+float MotorStartVoltage = 2.4; //voltage the system will default to when clicking or holding up. Use 1.5V for 1000Hz analog freq, 2.7 for 20000Hz.
 float BusVoltage = 3.3; //PWM Logic Level
 float MotorVoltageStep = 0.1; //voltage the motor will step up per MotorUpdateTime interval when a button is held  Use 0.2 for 1000Hz, 0.1 for 20000Hz
 int MotorUpdateTime = 500; //milliseconds, controls how frequently the motor voltage gets updated
@@ -43,13 +43,13 @@ u_long PrevUpdateTime = 0;
 u_long SleepTimeoutTracker = 0;
   //user config
 int SleepTimeoutTime = 60000; //milliseconds, controls how long before device deep sleep when there's no weight, button presses, etc.
-int SleepErrorTimeoutTime = 300000;  //sleep regardless of weight after 5 minutes of no button pushes. Used to cover for any weird scale behavior.
+int SleepErrorTimeoutTime = 120000;  //sleep regardless of weight after 5 minutes of no button pushes. Used to cover for any weird scale behavior.
 float WeightTimeoutMinimumBound = 2.0; //minimum weight to stay awake
 float WeightTimeoutMaxiumumBound = 30.0; //maximum bean weight expected in slowfeeder, keeps awake.
 
 //MotorAutoOff
 u_long MotorRunTime = 0;
-int MotorRunTimeout = 1000; //milliseconds to run motor without beans
+int MotorRunTimeout = 10000; //milliseconds to run motor without beans
 float MotorTimeoutWeightMinimum = 1.0; //minimum weight before motor auto-off routine begins evaluating
 
 //LastButtonPress
@@ -58,7 +58,7 @@ int ButtonRunTimeout = 5000; //milliseconds to ignore motor shutoff conditions d
 
 //HX711 Scale
 HX711 scale;
-float calibration_factor = -2650; //put in your calibration factor from calibration code
+float calibration_factor = 2182; //put in your calibration factor from calibration code
 float scale_reading = 0;
 
 //Button configs
@@ -125,6 +125,21 @@ void print_wakeup_reason() {
 }
 
 
+void beep(int count) {
+  //spin motor to beep
+  setMotorVoltage(IN1MotorPin, BusVoltage, 0); 
+
+  analogWriteFrequency(1000);
+
+  do {
+    delay(250);
+    setMotorVoltage(IN1MotorPin, BusVoltage, 0.5); 
+    delay(250);
+    setMotorVoltage(IN1MotorPin, BusVoltage, 0); 
+  } while (--count);
+  
+  analogWriteFrequency(MotorPWMFrequency);
+}
 
 
 void setup() {
@@ -193,6 +208,9 @@ void setup() {
 void loop() {
   int updatetimebool = ((millis() - PrevUpdateTime) > MotorUpdateTime);
   if(((millis() - SleepTimeoutTracker) > SleepTimeoutTime) || ((millis() - LastButtonPress) > SleepErrorTimeoutTime)){
+      //spin motor 3x to indicate sleep
+      beep(3);
+
       //put HX711 to sleep
       rtc_gpio_pulldown_dis(HX711CLK);
       rtc_gpio_pullup_en(HX711CLK);
@@ -272,6 +290,10 @@ void loop() {
   else if(MotorVoltage > 0 && scale_reading < 1.0 && MotorRunTime > 0){
     if((millis() - MotorRunTime > MotorRunTimeout) && (millis()-LastButtonPress > ButtonRunTimeout)){
       setMotorVoltage(IN1MotorPin, BusVoltage, MotorVoltage = 0);
+
+      //spin motor 2x to indicate motor timeout
+      beep(2);    
+
       Serial.println("No Load Motor Timeout");
     }
   }
